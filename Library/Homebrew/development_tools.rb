@@ -14,12 +14,14 @@ class DevelopmentTools
       # Give the name of the binary you look for as a string to this method
       # in order to get the full path back as a Pathname.
       (@locate ||= {}).fetch(tool) do |key|
+        ohai "Locating tool: #{key}"
         @locate[key] = if File.executable?(path = "/usr/bin/#{tool}")
           Pathname.new path
         # Homebrew GCCs most frequently; much faster to check this before xcrun
         elsif (path = HOMEBREW_PREFIX/"bin/#{tool}").executable?
           path
         end
+        ohai "Found tool at path: #{path}"
       end
     end
 

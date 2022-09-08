@@ -21,6 +21,7 @@ module Hardware
     ].freeze
 
     INTEL_64BIT_OLDEST_CPU = :core2
+    INTEL_64BIT_GENERIC_CPU = :x86_64
 
     class << self
       extend T::Sig
@@ -38,6 +39,7 @@ module Hardware
           armv8:              "-march=armv8-a",
           ppc64:              "-mcpu=powerpc64",
           ppc64le:            "-mcpu=powerpc64le",
+          apple_m1:           "-mcpu=apple-m1", 
         }.freeze
       end
       alias generic_optimization_flags optimization_flags

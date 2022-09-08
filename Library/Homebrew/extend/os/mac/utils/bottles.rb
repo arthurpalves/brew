@@ -8,8 +8,7 @@ module Utils
 
       def tag(symbol = nil)
         return Utils::Bottles::Tag.from_symbol(symbol) if symbol.present?
-
-        Utils::Bottles::Tag.new(system: MacOS.version.to_sym, arch: Hardware::CPU.arch)
+        Utils::Bottles::Tag.new(system: MacOS.version.to_sym, arch: Hardware::CPU::INTEL_64BIT_GENERIC_CPU)
       end
     end
 

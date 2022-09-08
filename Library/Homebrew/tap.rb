@@ -260,6 +260,8 @@ class Tap
     raise TapNoCustomRemoteError, name if custom_remote && clone_target.nil?
 
     requested_remote = clone_target || default_remote
+    requested_remote = requested_remote.gsub("https://github.com/", "git@github.com:")
+    requested_remote += ".git"
 
     if installed? && !custom_remote
       raise TapRemoteMismatchError.new(name, @remote, requested_remote) if clone_target && requested_remote != remote
@@ -295,6 +297,7 @@ class Tap
     clear_cache
 
     $stderr.ohai "Tapping #{name}" unless quiet
+    $stderr.ohai "Target #{requested_remote}" unless quiet
     args =  %W[clone #{requested_remote} #{path}]
 
     # Override possible user configs like:
