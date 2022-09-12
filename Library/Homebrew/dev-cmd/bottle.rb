@@ -78,6 +78,9 @@ module Homebrew
       switch "--only-json-tab",
              depends_on:  "--json",
              description: "When passed with `--json`, the tab will be written to the JSON file but not the bottle."
+      switch "--fat-binary",
+             description: "Generate two bottles, one with a x86_64 tag and one with an arm64 tag. " \
+                          "To be used when `install --build-bottle` has generated a fat binary."
       flag   "--committer=",
              description: "Specify a committer name and email in `git`'s standard author format."
       flag   "--root-url=",
@@ -94,15 +97,32 @@ module Homebrew
 
   def bottle
     args = bottle_args.parse
+    ohai "Fat binary: #{args.fat_binary?}"
 
     if args.merge?
       Homebrew.install_bundler_gems!
       return merge(args: args)
     end
 
-    args.named.to_resolved_formulae(uniq: false).each do |f|
-      bottle_formula f, args: args
+    archs = [Hardware::CPU::arch]
+    if args.fat_binary?
+      archs = [Hardware::CPU::INTEL_64BIT_GENERIC_CPU, Hardware::CPU::ARM_64BIT_GENERIC_CPU]
     end
+
+    bottles = []
+    for arch in archs
+      ohai "Building bottle for arch: #{arch}"
+      args.named.to_resolved_formulae(uniq: false).each do |f|
+        bottle, filename = bottle_formula f, args: args, arch: arch
+        bottles.push({ :bottle => bottle, :filename => filename, :args => args })
+        # ohai "bottles: #{bottles.first.fil}"
+      end
+    end
+    built_bottles = bottles.map{ |dict| dict[:bottle] if dict.key?(:bottle) }.compact
+    local_filenames = bottles.map{ |dict| dict[:filename] if dict.key?(:filename) }.compact
+    bottles_args = bottles.map{ |dict| dict[:args] if dict.key?(:args) }.compact
+
+    bottle_formula_output bottles: built_bottles, local_filenames: local_filenames, args: bottles_args
   end
 
   def keg_contain?(string, keg, ignores, formula_and_runtime_deps_names = nil, args:)
@@ -225,6 +245,38 @@ module Homebrew
     erb.result(erb_binding).gsub(/^\s*$\n/, "")
   end
 
+  def bottles_output(bottles, root_url_using)
+    return if bottles.empty?
+    sha256_lines = []
+    for bottle in bottles
+      cellars = bottle.checksums.map do |checksum|
+        cellar = checksum["cellar"]
+        next unless cellar_parameter_needed? cellar
+
+        case cellar
+        when String
+          %Q("#{cellar}")
+        when Symbol
+          ":#{cellar}"
+        end
+      end.compact
+      tag_column = cellars.empty? ? 0 : "cellar: #{cellars.max_by(&:length)}, ".length
+
+      tags = bottle.checksums.map { |checksum| checksum["tag"] }
+      # Start where the tag ends, add the max length of the tag, add two for the `: `
+      digest_column = tag_column + tags.max_by(&:length).length + 2
+
+      bottle.checksums.map do |checksum|
+        sha256_lines.push(generate_sha256_line(checksum["tag"], checksum["digest"], checksum["cellar"], tag_column, digest_column))
+      end
+    end
+    erb_binding = bottle.instance_eval { binding }
+    erb_binding.local_variable_set(:sha256_lines, sha256_lines)
+    erb_binding.local_variable_set(:root_url_using, root_url_using)
+    erb = ERB.new BOTTLE_ERB
+    erb.result(erb_binding).gsub(/^\s*$\n/, "")
+  end
+
   def sudo_purge
     return unless ENV["HOMEBREW_BOTTLE_SUDO_PURGE"]
 
@@ -285,7 +337,7 @@ module Homebrew
     ignores.compact
   end
 
-  def bottle_formula(f, args:)
+  def bottle_formula(f, args:, arch:)
     local_bottle_json = args.json? && f.local_bottle_path.present?
 
     unless local_bottle_json
@@ -307,10 +359,14 @@ module Homebrew
       [tag_string.to_sym, rebuild_string.to_i]
     end
 
-    bottle_tag = if bottle_tag
-      Utils::Bottles::Tag.from_symbol(bottle_tag)
+    if arch.empty?
+      bottle_tag = if bottle_tag
+        Utils::Bottles::Tag.from_symbol(bottle_tag)
+      else
+        Utils::Bottles.tag
+      end
     else
-      Utils::Bottles.tag
+      bottle_tag = Utils::Bottles::Tag.new(system: MacOS.version.to_sym, arch: arch)
     end
 
     rebuild ||= if args.no_rebuild? || !tap
@@ -528,9 +584,16 @@ module Homebrew
       end
     end
 
-    output = bottle_output(bottle, args.root_url_using)
+    return bottle, local_filename
+  end
 
-    puts "./#{local_filename}"
+  def bottle_formula_output(bottles:, local_filenames:, args:)
+    args = args.first
+    output = bottles_output(bottles, args.root_url_using)
+
+    for filename in local_filenames
+      puts "./#{filename}"
+    end
     puts output
 
     return unless args.json?

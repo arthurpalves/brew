@@ -310,7 +310,7 @@ class Bottle
 
     sig { returns(String) }
     def to_s
-      "#{name}--#{version}#{extname}"
+      "#{name}-#{version}#{extname}"
     end
     alias to_str to_s
 

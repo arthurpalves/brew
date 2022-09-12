@@ -22,6 +22,7 @@ module Hardware
 
     INTEL_64BIT_OLDEST_CPU = :core2
     INTEL_64BIT_GENERIC_CPU = :x86_64
+    ARM_64BIT_GENERIC_CPU = :arm64
 
     class << self
       extend T::Sig
