@@ -15,6 +15,8 @@ HOMEBREW_REPOSITORY = Pathname(ENV.fetch("HOMEBREW_REPOSITORY")).freeze
 # Where we store most of Homebrew, taps, and various metadata
 HOMEBREW_LIBRARY = Pathname(ENV.fetch("HOMEBREW_LIBRARY")).freeze
 
+HOMEBREW_TAPS = Pathname(ENV.fetch("HOMEBREW_TAPS")).freeze
+
 # Where shim scripts for various build and SCM tools are stored
 HOMEBREW_SHIMS_PATH = (HOMEBREW_LIBRARY/"Homebrew/shims").freeze
 

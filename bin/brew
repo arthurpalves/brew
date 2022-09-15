@@ -81,6 +81,7 @@ fi
 # If the location of HOMEBREW_LIBRARY changes
 # keg_relocate.rb, formula_cellar_checks.rb, and test/global_spec.rb need to change.
 HOMEBREW_LIBRARY="${HOMEBREW_REPOSITORY}/Library"
+HOMEBREW_TAPS="/opt/homebrew/Library/Taps"
 
 # Copy and export all HOMEBREW_* variables previously mentioned in
 # manpage or used elsewhere by Homebrew.
@@ -100,6 +101,7 @@ export HOMEBREW_BREW_FILE
 export HOMEBREW_PREFIX
 export HOMEBREW_REPOSITORY
 export HOMEBREW_LIBRARY
+export HOMEBREW_TAPS
 
 # set from user environment
 # shellcheck disable=SC2154

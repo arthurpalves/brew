@@ -18,7 +18,8 @@ class Tap
 
   extend Cachable
 
-  TAP_DIRECTORY = (HOMEBREW_LIBRARY/"Taps").freeze
+  # TAP_DIRECTORY = (HOMEBREW_LIBRARY/"Taps").freeze
+  TAP_DIRECTORY = HOMEBREW_TAPS
 
   HOMEBREW_TAP_FORMULA_RENAMES_FILE = "formula_renames.json"
   HOMEBREW_TAP_MIGRATIONS_FILE = "tap_migrations.json"
@@ -56,7 +57,7 @@ class Tap
   end
 
   def self.from_path(path)
-    match = File.expand_path(path).match(HOMEBREW_TAP_PATH_REGEX)
+    match = File.expand_path(path).match(HOMEBREW_TAP_PATH_REGEX_NEW)
     return if match.blank? || match[:user].blank? || match[:repo].blank?
 
     fetch(match[:user], match[:repo])

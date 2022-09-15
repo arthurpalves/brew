@@ -52,6 +52,11 @@ class Tab < OpenStruct
       "built_on"                => DevelopmentTools.build_system_info,
     }
 
+    ohai "tab create build: #{formula.build}"
+    ohai "tab create formula: #{formula}"
+    ohai "tab create source.path: #{formula.full_specified_name.to_s}"
+    ohai "tab create source.tap: #{formula.tap&.name}"
+
     # We can only get `tap_git_head` if the tap is installed locally
     attributes["source"]["tap_git_head"] = formula.tap.git_head if formula.tap&.installed?
 
@@ -71,6 +76,8 @@ class Tab < OpenStruct
 
   # Like {from_file}, but bypass the cache.
   def self.from_file_content(content, path)
+    # ohai "tab from_file_content: #{content}"
+    # ohai "tab from_file_path: #{path}"
     attributes = begin
       JSON.parse(content)
     rescue JSON::ParserError => e
@@ -159,6 +166,16 @@ class Tab < OpenStruct
 
     if path
       tab = from_file(path)
+      tap_path = tab.source["path"]
+      # tap_path = tap_path.gsub("#{Tap::TAP_DIRECTORY.to_s}", "")
+      # tap_path = tap_path.gsub("/Formula/#{f}.rb", "")
+      # tap_path = tap_path.gsub("homebrew-", "")
+      # tap_path = tap_path.delete_prefix("/")
+      # tab.source["tap"] = tap_path
+      
+      ohai "tab from_file new path: #{tap_path}"
+      ohai "tab from_file tab: #{tab.source}"
+      ohai "tab from_file path: #{path}"
       used_options = remap_deprecated_options(f.deprecated_options, tab.used_options)
       tab.used_options = used_options.as_flags
     else
@@ -292,11 +309,14 @@ class Tab < OpenStruct
 
   def tap
     tap_name = source["tap"]
+    ohai "tap source: #{source}"
+    ohai "tap tap_name: #{tap_name}"
     Tap.fetch(tap_name) if tap_name
   end
 
   def tap=(tap)
     tap_name = tap.respond_to?(:name) ? tap.name : tap
+    ohtai "tap tap= : #{tap}"
     source["tap"] = tap_name
   end
 
